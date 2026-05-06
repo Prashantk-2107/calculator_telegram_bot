@@ -1,88 +1,86 @@
-import { Telegraf } from "telegraf";
+import { Telegraf,Markup } from "telegraf";
 import dotenv from "dotenv";
 import { checkValidation } from "./services.js";
-import { evaluate } from "mathjs";
 
 dotenv.config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
-bot.start((ctx) => {
+let currentOperation;
+bot.start((ctx)=>{
   ctx.reply("Welcome to Calculator Bot!");
-});
-
-bot.command("help", (ctx) => {
   ctx.reply("Use buttons below to perform calculations");
-});
+  ctx.reply(
+    "Choose operation 👇",
+    Markup.keyboard([
+      ["/add", "/sub"],
+      ["/mul", "/div"]
+    ]).resize()
+  );
+})
 
-bot.command("add", (ctx) => {
-  const text = ctx.message.text.split(" ").splice(1);
+bot.command("add",(ctx)=>{
+    currentOperation = "add";
+    ctx.reply("Enter numbers to add");
+})
 
-  const check = checkValidation(text);
-  //check whether min 2 numbers is provided
-  if (check.isValid == false) {
-    ctx.reply(check.message);
-    return;
-  }
-  const result = text.reduce((acc, num) => acc + Number(num), 0);
-  ctx.reply(`The sum of ${text.join(", ")} is ${result}`);
-});
+bot.command("sub",(ctx)=>{
+    currentOperation = "sub";
+    ctx.reply("Enter numbers to subtract");
+})
 
-bot.command("sub", (ctx) => {
-  const text = ctx.message.text.split(" ").splice(1);
+bot.command("mul",(ctx)=>{
+    currentOperation = "mul";
+    ctx.reply("Enter numbers to multiply");
+})
 
-  const check = checkValidation(text);
-  //check whether min 2 numbers is provided
-  if (check.isValid == false) {
-    ctx.reply(check.message);
-    return;
-  }
-  const result = text.map(Number).reduce((acc, num) => acc - num);
-  ctx.reply(`The difference of ${text.join(", ")} is ${result}`);
-});
+bot.command("div",(ctx)=>{
+    currentOperation = "div";
+    ctx.reply("Enter numbers to divide");
+})
 
-bot.command("mul", (ctx) => {
-  const text = ctx.message.text.split(" ").splice(1);
+bot.on("text",(ctx)=>{
+    const text = ctx.message.text.split(" ");
 
-  const check = checkValidation(text);
-  //check whether min 2 numbers is provided
-  if (check.isValid == false) {
-    ctx.reply(check.message);
-    return;
-  }
-  const result = text.map(Number).reduce((acc, num) => acc * num);
-  ctx.reply(`The product of ${text.join(", ")} is ${result}`);
-});
-
-bot.command("div", (ctx) => {
-  const text = ctx.message.text.split(" ").splice(1);
-
-  const check = checkValidation(text);
-  //check whether min 2 numbers is provided
-  if (check.isValid == false) {
-    ctx.reply(check.message);
-    return;
-  }
-  const result = text.map(Number).reduce((acc, num) => acc / num);
-  ctx.reply(`The division of ${text.join(", ")} is ${result}`);
-});
-
-bot.on("text", (ctx) => {
-  try {
-    const expression = ctx.message.text;
-
-    // ⚠️ basic safety check
-    if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
-      ctx.reply("Invalid expression ❌");
-      return;
+    const {isValid,message} = checkValidation(text);
+    if(!isValid){
+        ctx.reply(message);
+        return;
     }
 
-    const result = evaluate(expression);
-    ctx.reply(`Result: ${result}`);
-  } catch (err) {
-    ctx.reply("Invalid expression ❌");
-  }
-});
+    switch(currentOperation){
+        case "add":
+            const addResult = text.reduce((acc,curr)=>{
+                return Number(acc)+Number(curr)
+            })
+            ctx.reply(`Result: ${addResult}`);
+            break;
+        
+        case "sub":
+            const subResult = text.reduce((acc,curr)=>{
+                return Number(acc)-Number(curr)
+            })
+            ctx.reply(`Result: ${subResult}`);
+            break;
+        
+        case "mul":
+            console.log("array", text);
+            const mulResult = text.reduce((acc,curr)=>{
+                return Number(acc)*Number(curr)
+            },1)
+            console.log("mulResult",mulResult)
+            ctx.reply(`Result: ${mulResult}`);
+            break;
+        
+        case "div":
+            const divResult = text.reduce((acc,curr)=>{
+                return Number(acc)/Number(curr)
+            })
+            ctx.reply(`Result: ${divResult}`);
+            break;
+        
+    }
+
+})
 
 bot.launch();
 
